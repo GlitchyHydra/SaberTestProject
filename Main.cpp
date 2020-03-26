@@ -23,9 +23,9 @@ void getBits(int number) {
 }
 
 int main() {
-	/*prepareSerializationOneElement();
+	prepareSerializationOneElement();
 	prepareSerializationEmpty();
-	prepareSerialization();*/
+	prepareSerialization();
 	testAverageNormals();
 	return 0;
 }

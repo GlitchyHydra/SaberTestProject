@@ -62,7 +62,6 @@ vec3 calcAverage(unordered_set<vec3> normals) {
 	return vec3{ sumVec.x / number, sumVec.y / number, sumVec.z / number };
 }
 
-
 //
 // Calculate smooth (average) per-vertex normals
 //
@@ -79,7 +78,6 @@ void calc_mesh_normals(vec3* normals, const vec3* verts, const int* faces, size_
 	{
 		return;
 	}
-	//catch bad allocation
 	unordered_set<vec3>* adjArr = new unordered_set < vec3>[nverts];
 	
 	//O(number of adj triangles/3)
