@@ -5,147 +5,142 @@
 #include <thread>
 
 struct ListHeader {
-	uint32_t sizeOfList;
-	uint16_t sizeOfAddr; //pointers have a different size on different machines such as 64bit, 32 bit, 16bit...
-	uint32_t dataOffset; //where start a data
+	uint32_t sizeOfList;//count of elements
+	uint16_t sizeOfAddr; //pointers have a different size on different machines such as 64bit, 32 bit...
 };
-
+//assuming that number of elements will not be exceed 2^32 
 struct DataPortion {
-	uint32_t id; //addr of Node, 4 or 8 bytes, depends on machine
-	uint32_t rand_id; //addr of rand Node, 4 or 8 bytes, depends on machine
-	uint32_t sizeOfData; //size of string
+	uint32_t id; //order number of Node
+	uint32_t rand_id; //order number of rand Node
+	uint32_t sizeOfData; //size of data (size of string)
 };
 
-void fillDataPortion(DataPortion* dp, ListNode* currentNode, std::string allData) {
-	dp->id = (uint32_t)currentNode;
-	dp->rand_id = reinterpret_cast<uint32_t>(currentNode->rand);
-	dp->sizeOfData = (uint32_t)currentNode->data.size();
-	allData.append(currentNode->data);
+//fillMap with Node addr and Node order number
+//It's need for next searching of rand Node order number
+void fillMap(std::unordered_map <ListNode *, uint32_t>* nodesMap, size_t count, ListNode* currentNode, bool forHead) {
+	size_t halfSize = count >> 1; // median num
+	size_t length = count - 1; // length of List
+	if (forHead) {
+		for (size_t i = 0; i <= halfSize; i++) {
+			nodesMap->insert({ currentNode, i });
+			currentNode = currentNode->next;
+		}
+	}
+	else {
+		for (size_t i = length; i > halfSize; i--) {
+			nodesMap->insert({ currentNode, i });
+			currentNode = currentNode->prev;
+		}
+	}
+}
+
+//creating two maps from head and from tail to median
+std::unordered_map <ListNode *, uint32_t> getMapOfNodes(size_t count, ListNode* head, ListNode* tail) {
+	std::unordered_map <ListNode *, uint32_t> headMap;
+	std::unordered_map <ListNode*, uint32_t> tailMap;
+	std::thread threadHeadMap;
+	std::thread threadTailMap;
+	threadHeadMap = std::thread(fillMap, &headMap, count, head, true);
+	threadTailMap = std::thread(fillMap, &tailMap, count, tail, false);
+	//wait for result
+	if (threadHeadMap.joinable())
+		threadHeadMap.join();
+	if (threadTailMap.joinable())
+		threadTailMap.join();
+	//concatenate two maps together
+	headMap.insert(tailMap.begin(), tailMap.end());
+	return headMap;
 }
 
 void List::Serialize(FILE* file) {
-	ListHeader* lh = new ListHeader{ (uint32_t)count, sizeof(struct ListNode*), sizeof(ListHeader)};
+	//creating info about List size and size of pointers
+	//for x64 - 8 byte, for x32 - 4 byte
+	ListHeader* lh = new ListHeader{ (uint32_t)count, sizeof(struct ListNode*)};
 	fwrite(lh, sizeof(ListHeader), 1, file);
-
-	if (head == nullptr || count == 0) {
+	//if List is empty is nothing else to write
+	if (head == NULL || count == 0) {
 		fclose(file);
 		return;
 	}
-
+	//allData gathered together for one string
+	//It will be write with one fwrite to file
 	std::string allData;
 	DataPortion* dpArray = new DataPortion[count];
 	ListNode* currentNode = head;
-	/*ListNode* currentNodeFromHead = head;
-	ListNode* currentNodeFromTail = tail;*/
-
-	size_t halfCount = count >> 1;
-	size_t length = count - 1;
-
+	//creating map of Node addr and Node order number
+	std::unordered_map <ListNode*, uint32_t> mapOfNodes = getMapOfNodes(count, head, tail);
 	//write info about each Node
 	for (size_t i = 0; i < count; i++) {
-		/*fillDataPortion(&dpArray[i], currentNodeFromHead, allData);
-		fillDataPortion(&dpArray[length - i], currentNodeFromTail, allData);
-		currentNodeFromHead = currentNodeFromHead->next;
-		currentNodeFromTail = currentNodeFromTail->prev;*/
-		dpArray[i].id = (uint32_t)currentNode;
-		dpArray[i].rand_id = reinterpret_cast<uint32_t>(currentNode->rand);
+		dpArray[i].id = i;
+		if (currentNode->rand == NULL)
+		{
+			dpArray[i].rand_id = NULL;
+		}
+		else {
+			dpArray[i].rand_id = mapOfNodes.find(currentNode->rand)->second;
+		}
 		dpArray[i].sizeOfData = (uint32_t)currentNode->data.size();
 		allData.append(currentNode->data);
 		currentNode = currentNode->next;
 	}
-	/*if ((count & 1) != 1)
-		fillDataPortion(&dpArray[halfCount], currentNodeFromTail, allData);*/
 	fwrite(dpArray, sizeof(DataPortion), count, file);
-
 	//write strings
-	uint32_t sizeOfData = allData.size();
-	fwrite(&sizeOfData, sizeof(uint32_t), 1, file);
-	fwrite(allData.c_str(), sizeof(const char), sizeOfData, file);
-	
+	fwrite(allData.c_str(), sizeof(const char), allData.size(), file);
+	//free allocated memory and close file for writing
 	delete lh;
 	delete[] dpArray;
-
 	fclose(file);
 }
-
+//read header
 ListHeader DesearializeHeader(FILE* file) {
 	char buffer[sizeof(ListHeader)];
 	fread(buffer, sizeof(ListHeader), 1, file);
 	ListHeader lh{
 		(buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | (buffer[0]),
-		(buffer[5] << 8) | (buffer[4]),
-		(buffer[9] << 24) | (buffer[8] << 16) | (buffer[7] << 8) | (buffer[6])
+		(buffer[5] << 8) | (buffer[4])
 	};
 	return lh;
-}
-
-void fillMap(std::unordered_map <uint32_t, ListNode*> nodesMap, size_t count, ListNode* lnArray, DataPortion* dpArray) {
-	for (size_t i = 0; i < count >> 1; i++) {
-		nodesMap.insert({ dpArray[i].id, &lnArray[i] });
-	}
-}
-
-void fillMap1(std::unordered_map <uint32_t, ListNode*> nodesMap, size_t count, ListNode* lnArray, DataPortion* dpArray) {
-	for (size_t i = count >> 1; i < count; i++) {
-		nodesMap.insert({ dpArray[i].id, &lnArray[i] });
-	}
 }
 
 void List::Deserialize(FILE* file){
 	ListHeader lh = DesearializeHeader(file);
 	this->count = lh.sizeOfList;
-
-	if (count == 0) return;
-
+	if (count == 0) {
+		fclose(file);
+		return;
+	}
+	//allocate memory for reading info about info
 	DataPortion* dpArray = new DataPortion[count];
 	fread(dpArray, sizeof(DataPortion), count, file);
-	
-	uint32_t sizeOfSt = 0;
-	fread(&sizeOfSt, sizeof(uint32_t), 1, file);
-
 	//map storing node:random node dependicies 
 	std::unordered_map <uint32_t, ListNode*> nodesMap;
 	size_t allSize = 0;
+	//Array with Nodes
 	ListNode* lnArray = new ListNode[count];
-	
-	/*std::thread threadMap;
-	threadMap = std::thread(fillMap, nodesMap, count, lnArray, dpArray);
-	std::thread threadMap1;
-	threadMap1 = std::thread(fillMap1, nodesMap, count, lnArray, dpArray);*/
-
+	//read all data, place to Nodes
+	//and linking in proper order each Node
 	for (size_t i = 0; i < count; i++) {
-		
-			nodesMap.insert({ dpArray[i].id, &lnArray[i] });
+		lnArray[i].rand = &lnArray[dpArray[i].rand_id];
+		//check if i_Node is not a last Node
+		//then i + 1 will be out of range
 		if (i + 1 < count)
 		{
 			lnArray[i].next = &lnArray[i + 1];
 			lnArray[i + 1].prev = &lnArray[i];
 		}
 		size_t sizeToRead = dpArray[i].sizeOfData;
+		//set proper size for string
 		lnArray[i].data.resize(sizeToRead);
+		//write to char array data
 		fread(&lnArray[i].data[0], sizeof(char), sizeToRead, file);
 	}
-
-	/*if (threadMap.joinable())
-		threadMap.join();
-	if (threadMap1.joinable())
-		threadMap1.join();*/
-
-	size_t i = 0;
 	head = lnArray;
 	tail = &lnArray[count - 1];
-	for (size_t i = 0; i < count; i++) {
-		size_t randomNodeId = dpArray[i].rand_id;
-		if (randomNodeId != NULL) {
-			auto search = nodesMap.find(randomNodeId);
-			lnArray[i].rand = search->second;
-		}
-	}
-
+	//free memory for info Of Node array and close file 
 	delete[] dpArray;
 	fclose(file);
 }
-
+//Additional function to fill List
 void List::AddNode(std::string data) {
 	count++;
 	if (head == nullptr) {

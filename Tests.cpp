@@ -6,6 +6,9 @@
 #include "Calc_mesh_normals.h"
 #include "List.h"
 
+using namespace std;
+
+//test two List
 void List::TestAfterSerialization(List* anotherList) {
 	ListNode* thisNode = head;
 	ListNode* anotherNode = anotherList->head;
@@ -19,37 +22,65 @@ void List::TestAfterSerialization(List* anotherList) {
 			assert(thisNode->rand->data == anotherNode->rand->data);
 		}
 	}
-	std::cout << "TEST DONE" << std::endl;
+	cout << "TEST DONE" << endl;
 }
 
+//stress test. All Nodes have rand except head Node.
 void prepareSerialization() {
 
-	std::string random_string = "This is a random string with nothing else";
 	FILE* f;
 	fopen_s(&f, "serializedData", "wb");
 	List* ls = new List();
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 	for (size_t i = 0; i < 1000000; i++)
-		ls->AddNode(""); //AddNode(random_string());
+		ls->AddNode(to_string(i));
 	ls->AddNode("durak");
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << std::endl;
+	chrono::steady_clock::time_point end = chrono::steady_clock::now();
+	cout << "Time difference = " << (chrono::duration_cast<chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << endl;
 
-	begin = std::chrono::steady_clock::now();
+	begin = chrono::steady_clock::now();
 	ls->Serialize(f);
-	end = std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << std::endl;
+	end = chrono::steady_clock::now();
+	cout << "Time difference = " << (chrono::duration_cast<chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << endl;
 
 	List* ls2 = new List();
 	fopen_s(&f, "serializedData", "rb");
-	begin = std::chrono::steady_clock::now();
+	begin = chrono::steady_clock::now();
 	ls2->Deserialize(f);
-	end = std::chrono::steady_clock::now();
-	std::cout << "Time difference = " << (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << std::endl;
+	end = chrono::steady_clock::now();
+	cout << "Time difference = " << (chrono::duration_cast<chrono::microseconds>(end - begin).count()) / 1000000.0 << "[탎]" << endl;
 	ls->TestAfterSerialization(ls2);
 }
 
+//Test empty List
+void prepareSerializationEmpty() {
+	FILE* f;
+	fopen_s(&f, "serializedData", "wb");
+	List* ls = new List();
+	ls->Serialize(f);
+	List* ls2 = new List();
+	fopen_s(&f, "serializedData", "rb");
+	ls2->Deserialize(f);
+	ls->TestAfterSerialization(ls2);
+}
+
+//Test List with One element
+void prepareSerializationOneElement() {
+	FILE* f;
+	fopen_s(&f, "serializedData", "wb");
+	List* ls = new List();
+	ls->AddNode("durak");
+	ls->Serialize(f);
+	List* ls2 = new List();
+	fopen_s(&f, "serializedData", "rb");
+	ls2->Deserialize(f);
+	ls->TestAfterSerialization(ls2);
+}
+//This is not a test. This was need for debugging of third task.
+//Cube was create in 3dsMax for third task.
+//Then was created one script for printing vertex.
+//All was got from 3ds Max. (check cover letter in email)
 void testAverageNormals() {
 	vec3* verts = new vec3[8];
 	verts[0] = vec3{ -0.163f, -0.201f, .0f };
@@ -74,9 +105,7 @@ void testAverageNormals() {
 	faces[27] = 6; faces[28] = 7; faces[29] = 3;
 	faces[30] = 2; faces[31] = 0; faces[32] = 4;
 	faces[33] = 4; faces[34] = 6; faces[35] = 2;
-
+	//output array
 	vec3* normals = new vec3[8];
-
 	calc_mesh_normals(normals, verts, faces, 8, 36);
-	std::cout << "Gut" << std::endl;
 }

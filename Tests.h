@@ -3,5 +3,7 @@
 
 void testAverageNormals();
 void prepareSerialization();
+void prepareSerializationEmpty();
+void prepareSerializationOneElement();
 
 #endif // !SIMPLE_TESTS_H

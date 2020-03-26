@@ -1,20 +1,30 @@
-#include <random>
 #include "Tests.h"
 
-std::string random_string()
-{
-	std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+#include <iostream>
 
-	std::random_device rd;
-	std::mt19937 generator(rd());
+using namespace std;
 
-	std::shuffle(str.begin(), str.end(), generator);
-
-	return str.substr(0, 32);    // assumes 32 < number of characters in str         
+void getBits(int number) {
+	const size_t size = sizeof(int) * 8;
+	size_t mask = 1;
+	bool bits[size];
+	//get bit by mask
+	for (int i = 0; i < size; i++) {
+		bits[i] = number & mask;
+		//shift mask
+		mask = mask << 1;
+	}
+	//print
+	for (int i = size - 1; i >= 0; i--) {
+		cout << bits[i];
+	}
+	cout << endl;
+	return;
 }
 
 int main() {
-
+	prepareSerializationOneElement();
+	prepareSerializationEmpty();
 	prepareSerialization();
 	//testAverageNormals();
 	return 0;

@@ -80,6 +80,7 @@ vec3 calcAverage(unordered_set<vec3> normals) {
 //
 void calc_mesh_normals(vec3* normals, const vec3* verts, const int* faces, size_t nverts, size_t nfaces)
 {
+	//for one triangle need three vectors 
 	if (nverts < 3)
 	{
 		return;
