@@ -12,6 +12,7 @@ using namespace std;
 void List::TestAfterSerialization(List* anotherList) {
 	ListNode* thisNode = head;
 	ListNode* anotherNode = anotherList->head;
+
 	for (size_t i = 1; i < count; i++)
 	{
 		assert(thisNode->data == anotherNode->data);
@@ -19,7 +20,7 @@ void List::TestAfterSerialization(List* anotherList) {
 		anotherNode = anotherNode->next;
 		if (thisNode->rand != NULL && anotherNode->rand != NULL)
 		{
-			assert(thisNode->rand->data == anotherNode->rand->data);
+			assert(thisNode->rand->data.compare(anotherNode->rand->data) == 0);
 		}
 	}
 	cout << "TEST DONE" << endl;
@@ -70,7 +71,7 @@ void prepareSerializationOneElement() {
 	FILE* f;
 	fopen_s(&f, "serializedData", "wb");
 	List* ls = new List();
-	ls->AddNode("durak");
+	ls->AddNode("One element");
 	ls->Serialize(f);
 	List* ls2 = new List();
 	fopen_s(&f, "serializedData", "rb");

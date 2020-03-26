@@ -1,6 +1,5 @@
 #include "List.h"
 
-#include <iostream>
 #include <unordered_map> 
 #include <thread>
 
@@ -91,13 +90,23 @@ void List::Serialize(FILE* file) {
 }
 //read header
 ListHeader DesearializeHeader(FILE* file) {
-	char buffer[sizeof(ListHeader)];
+	unsigned char buffer[sizeof(ListHeader)];
 	fread(buffer, sizeof(ListHeader), 1, file);
 	ListHeader lh{
 		(buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | (buffer[0]),
 		(buffer[5] << 8) | (buffer[4])
 	};
 	return lh;
+}
+
+DataPortion DesearilizeDataPortion(FILE* file) {
+	unsigned char buffer[sizeof(DataPortion)];
+	fread(buffer, sizeof(DataPortion), 1, file);
+	DataPortion dp{
+		(buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | (buffer[0]),
+		(buffer[7] << 24) | (buffer[6] << 16) | (buffer[5] << 8) | (buffer[4])
+	};
+	return dp;
 }
 
 void List::Deserialize(FILE* file){
@@ -109,9 +118,12 @@ void List::Deserialize(FILE* file){
 	}
 	//allocate memory for reading info about info
 	DataPortion* dpArray = new DataPortion[count];
-	fread(dpArray, sizeof(DataPortion), count, file);
-	//map storing node:random node dependicies 
-	std::unordered_map <uint32_t, ListNode*> nodesMap;
+	for (size_t i = 0; i < count; i++) {
+		DataPortion dp = DesearilizeDataPortion(file);
+		dpArray[i].rand_id = dp.rand_id;
+		dpArray[i].sizeOfData = dp.sizeOfData;
+	}
+
 	size_t allSize = 0;
 	//Array with Nodes
 	ListNode* lnArray = new ListNode[count];
