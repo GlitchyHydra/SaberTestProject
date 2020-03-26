@@ -108,4 +108,7 @@ void testAverageNormals() {
 	//output array
 	vec3* normals = new vec3[8];
 	calc_mesh_normals(normals, verts, faces, 8, 36);
+	for (size_t i = 0; i < 8; i++) {
+		cout << normals[i].x << " " << normals[i].y << " " << normals[i].z <<endl;
+	}
 }

@@ -18,12 +18,6 @@ namespace std
 	};
 };
 
-//need for linking vector and Normals of its vector
-struct AdjancentyNode {
-	vec3 vector_;
-	unordered_set<vec3> adjNormals;
-};
-
 void vec3::normalize() {
 	float length = sqrtf(x * x + y * y + z * z);
 	x = x / length;
@@ -85,43 +79,27 @@ void calc_mesh_normals(vec3* normals, const vec3* verts, const int* faces, size_
 	{
 		return;
 	}
-
-	AdjancentyNode* adjArr;
-
 	//catch bad allocation
-	try
-	{
-		adjArr = new AdjancentyNode[nverts * sizeof(AdjancentyNode)];
-	}
-	catch (std::bad_alloc&)
-	{
-		return;
-	}
-
+	unordered_set<vec3>* adjArr = new unordered_set < vec3>[nverts];
+	
 	//O(number of adj triangles/3)
 	for (size_t i = 0; i < nfaces; i+=3) {
 		int vecIndicie1 = faces[i]; //1st index of triangle
 		int vecIndicie2 = faces[i + 1]; //2nd
 		int vecIndicie3 = faces[i + 2]; //3rd
 
-		//add vector to AdjNode
-		adjArr[vecIndicie1].vector_ = verts[vecIndicie1]; 
-		adjArr[vecIndicie2].vector_ = verts[vecIndicie2];
-		adjArr[vecIndicie3].vector_ = verts[vecIndicie3];
-
 		//getNormal and place to adjNode of vector
 		vec3 normal = crossProduct(&verts[vecIndicie1], &verts[vecIndicie2], &verts[vecIndicie3]);
-		adjArr[vecIndicie1].adjNormals.insert(normal);
-		adjArr[vecIndicie2].adjNormals.insert(normal);
-		adjArr[vecIndicie3].adjNormals.insert(normal);
+		adjArr[vecIndicie1].insert(normal);
+		adjArr[vecIndicie2].insert(normal);
+		adjArr[vecIndicie3].insert(normal);
 	}
 
 	//O(count of adj faces to vert * nverts)
 	for (size_t i = 0; i < nverts; i++) {
-		normals[i] = calcAverage(adjArr[i].adjNormals);
+		normals[i] = calcAverage(adjArr[i]);
 		normals[i].normalize();
 	}
-
 	delete[] adjArr;
 	return;
 }

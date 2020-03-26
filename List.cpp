@@ -10,7 +10,6 @@ struct ListHeader {
 };
 //assuming that number of elements will not be exceed 2^32 
 struct DataPortion {
-	uint32_t id; //order number of Node
 	uint32_t rand_id; //order number of rand Node
 	uint32_t sizeOfData; //size of data (size of string)
 };
@@ -71,7 +70,6 @@ void List::Serialize(FILE* file) {
 	std::unordered_map <ListNode*, uint32_t> mapOfNodes = getMapOfNodes(count, head, tail);
 	//write info about each Node
 	for (size_t i = 0; i < count; i++) {
-		dpArray[i].id = i;
 		if (currentNode->rand == NULL)
 		{
 			dpArray[i].rand_id = NULL;
