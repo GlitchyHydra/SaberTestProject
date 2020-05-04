@@ -36,7 +36,6 @@ void prepareSerialization() {
 	chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 	for (size_t i = 0; i < 1000000; i++)
 		ls->AddNode(to_string(i));
-	ls->AddNode("durak");
 	chrono::steady_clock::time_point end = chrono::steady_clock::now();
 	cout << "Time difference = " << (chrono::duration_cast<chrono::microseconds>(end - begin).count()) / 1000000.0 << "[µs]" << endl;
 
@@ -83,29 +82,33 @@ void prepareSerializationOneElement() {
 //Then was created one script for printing vertex.
 //All was got from 3ds Max. (check cover letter in email)
 void testAverageNormals() {
-	vec3* verts = new vec3[8];
-	verts[0] = vec3{ -0.163f, -0.201f, .0f };
-	verts[1] = vec3{ 0.292f, -0.201f, .0f };
-	verts[2] = vec3{ -0.163f,  0.254f, -.0f };
-	verts[3] = vec3{ 0.292f,  0.254f, -.0f };
-	verts[4] = vec3{ -0.163f, -0.201f, 0.089f };
-	verts[5] = vec3{ 0.292f, -0.201f, 0.089f };
-	verts[6] = vec3{ -0.163f,  0.254f, 0.089f };
-	verts[7] = vec3{ 0.292f,  0.254f, 0.089f };
+	vec3 verts[8]{
+		vec3{ -0.163f, -0.201f,  0.0f   },
+		vec3{  0.292f, -0.201f,  0.0f   },
+		vec3{ -0.163f,  0.254f, -0.0f   },
+		vec3{  0.292f,  0.254f, -0.0f   },
+		vec3{ -0.163f, -0.201f,  0.089f },
+		vec3{  0.292f, -0.201f,  0.089f },
+		vec3{ -0.163f,  0.254f,  0.089f },
+		vec3{  0.292f,  0.254f,  0.089f }
+	};
+	
 
-	int* faces = new int[36];
-	faces[0] = 0; faces[1] = 2; faces[2] = 3;
-	faces[3] = 3; faces[4] = 1; faces[5] = 0;
-	faces[6] = 4; faces[7] = 5; faces[8] = 7;
-	faces[9] = 7; faces[10] = 6; faces[11] = 4;
-	faces[12] = 0; faces[13] = 1; faces[14] = 5;
-	faces[15] = 5; faces[16] = 4; faces[17] = 0;
-	faces[18] = 1; faces[19] = 3; faces[20] = 7;
-	faces[21] = 7; faces[22] = 5; faces[23] = 1;
-	faces[24] = 3; faces[25] = 2; faces[26] = 6;
-	faces[27] = 6; faces[28] = 7; faces[29] = 3;
-	faces[30] = 2; faces[31] = 0; faces[32] = 4;
-	faces[33] = 4; faces[34] = 6; faces[35] = 2;
+	int faces[36] = {
+		0, 2, 3,
+		3, 1, 0,
+		4, 5, 7,
+		7, 6, 4,
+		0, 1, 5,
+	    5, 4, 0,
+	    1, 3, 7,
+	    7, 5, 1,
+	    3, 2, 6,
+	    6, 7, 3,
+	    2, 0, 4,
+	    4, 6, 2
+	};
+
 	//output array
 	vec3* normals = new vec3[8];
 	calc_mesh_normals(normals, verts, faces, 8, 36);

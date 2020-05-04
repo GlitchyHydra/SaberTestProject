@@ -1,22 +1,13 @@
 #include "Calc_mesh_normals.h"
 #include <math.h>
-#include <unordered_set>
 
 using namespace std;
 
-//set hash calc for vec3
-namespace std
-{
-	template<>
-	struct hash<vec3>
-	{
-		size_t
-			operator()(const vec3& obj) const
-		{
-			return hash<int>()(obj.x + obj.y + obj.z);
-		}
-	};
-};
+void vec3::operator += (vec3 const& anotherVec) {
+	this->x += anotherVec.x;
+	this->y += anotherVec.y;
+	this->z += anotherVec.z;
+}
 
 void vec3::normalize() {
 	float length = sqrtf(x * x + y * y + z * z);
@@ -46,22 +37,6 @@ vec3 crossProduct(const vec3* firstVec, const vec3* secondVec, const vec3* third
 	return normal;
 }
 
-vec3 calcAverage(unordered_set<vec3> normals) {
-	vec3 sumVec = vec3{ .0, .0, .0 };
-	
-	//sum all coordinates
-	for (unordered_set<vec3>::const_iterator normal = normals.begin(); normal != normals.end(); ++normal)
-	{
-		sumVec.x += normal->x;
-		sumVec.y += normal->y;
-		sumVec.z += normal->z;
-	}
-
-	float number = (float) normals.size();
-
-	return vec3{ sumVec.x / number, sumVec.y / number, sumVec.z / number };
-}
-
 //
 // Calculate smooth (average) per-vertex normals
 //
@@ -78,7 +53,6 @@ void calc_mesh_normals(vec3* normals, const vec3* verts, const int* faces, size_
 	{
 		return;
 	}
-	unordered_set<vec3>* adjArr = new unordered_set < vec3>[nverts];
 	
 	//O(number of adj triangles/3)
 	for (size_t i = 0; i < nfaces; i+=3) {
@@ -86,18 +60,18 @@ void calc_mesh_normals(vec3* normals, const vec3* verts, const int* faces, size_
 		int vecIndicie2 = faces[i + 1]; //2nd
 		int vecIndicie3 = faces[i + 2]; //3rd
 
-		//getNormal and place to adjNode of vector
 		vec3 normal = crossProduct(&verts[vecIndicie1], &verts[vecIndicie2], &verts[vecIndicie3]);
-		adjArr[vecIndicie1].insert(normal);
-		adjArr[vecIndicie2].insert(normal);
-		adjArr[vecIndicie3].insert(normal);
+		normal.normalize();
+		 
+		normals[vecIndicie1] += normal;
+		normals[vecIndicie2] += normal;
+		normals[vecIndicie3] += normal;
 	}
 
 	//O(count of adj faces to vert * nverts)
 	for (size_t i = 0; i < nverts; i++) {
-		normals[i] = calcAverage(adjArr[i]);
 		normals[i].normalize();
 	}
-	delete[] adjArr;
+
 	return;
 }
